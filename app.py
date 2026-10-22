@@ -9,17 +9,13 @@ st.set_page_config(page_title="The Enchanted Athenaeum", page_icon="📜", layou
 
 # ---------------------------------------------------------
 # Themes
-#   dark  = Dark Academia (Cowhide Cocoa / Spiced Wine / Toasted Caramel / Olive Harvest / Golden Batter)
-#   light = Cottagecore   (Lace White / Oatmeal / Cream / Mushroom / Linen)
-# `face` = (css family name, file stem in ./fonts/). Drop poisoned-heart.otf / anaktoria.ttf
-# into a fonts/ folder to use the real fonts; otherwise the Google Font fallback is used.
 # ---------------------------------------------------------
 THEMES = {
     "dark": dict(
         bg="#442D1C", text="#E8D1A7", muted="#C2B58C", accent="#84592B", title="#E8D1A7",
         card="#52361F", border="#84592B", hdr="linear-gradient(135deg,#743014,#442D1C)",
         hdr_border="#84592B", hdr_sub="#E8D1A7", badge_bg="#743014", badge_fg="#E8D1A7",
-        badge_border="#8D8F67", btn_bg="#743014", btn_fg="#E8D1A7", input_bg="#52361F",
+        badge_border="#8D8F67", btn_bg="#743014", btn_fg="#E8D1A7", input_bg="#382415",
         shadow="rgba(0,0,0,.5)", rule="solid", deco="🕯️",
         face=("PoisonedHeart", "poisoned-heart"),
         font_title="'PoisonedHeart','Playfair Display'",
@@ -28,7 +24,7 @@ THEMES = {
         bg="#F7F2EA", text="#4A3F35", muted="#8A7A69", accent="#C7B5A3", title="#5C4A3A",
         card="#FFFDF8", border="#D9CBB5", hdr="linear-gradient(135deg,#E9DFCF,#F5EBCF)",
         hdr_border="#C7B5A3", hdr_sub="#8A7A69", badge_bg="#E8DFD0", badge_fg="#5C4A3A",
-        badge_border="#C7B5A3", btn_bg="#C7B5A3", btn_fg="#3E322A", input_bg="#FFFDF8",
+        badge_border="#C7B5A3", btn_bg="#C7B5A3", btn_fg="#3E322A", input_bg="#FAF6F0",
         shadow="rgba(120,100,80,.15)", rule="dashed", deco="🌿",
         face=("Anaktoria", "anaktoria"),
         font_title="'Anaktoria','Almendra'",
@@ -62,6 +58,34 @@ hr {{ border-top:1px {t['rule']} {t['border']} !important; }}
 .library-header h1 {{ font-size:3.2rem; margin:0 0 .5rem; }}
 .library-header p {{ color:{t['hdr_sub']}; font-style:italic; font-size:1.1rem; margin:0; }}
 
+/* Custom Selectbox Styling */
+div[data-baseweb="select"] > div {{
+    background: {t['input_bg']} !important;
+    border: 1.5px solid {t['border']} !important;
+    color: {t['text']} !important;
+    border-radius: 10px !important;
+    box-shadow: inset 0 2px 4px {t['shadow']};
+    transition: all 0.3s ease;
+}}
+div[data-baseweb="select"]:focus-within > div {{
+    border-color: {t['title']} !important;
+    box-shadow: 0 0 10px {t['accent']}, inset 0 2px 4px {t['shadow']} !important;
+}}
+div[data-baseweb="select"] * {{ color: {t['text']} !important; }}
+div[data-baseweb="select"] [data-skiptranslate="true"], 
+div[data-baseweb="select"] ::placeholder {{
+    color: {t['muted']} !important;
+    font-style: italic;
+}}
+div[data-baseweb="popover"] div {{
+    background: {t['card']} !important;
+    color: {t['text']} !important;
+}}
+div[data-baseweb="popover"] li:hover {{
+    background: {t['badge_bg']} !important;
+    color: {t['badge_fg']} !important;
+}}
+
 /* Cards */
 .book-card {{ background:{t['card']}; border:1px {t['rule']} {t['border']}; border-left:5px solid {t['accent']};
   border-radius:10px; padding:1.4rem 1.6rem; margin-bottom:1.2rem; box-shadow:0 4px 15px {t['shadow']};
@@ -73,10 +97,6 @@ hr {{ border-top:1px {t['rule']} {t['border']} !important; }}
   border:1px solid {t['badge_border']}; padding:.25rem .8rem; border-radius:20px; font-size:.85rem; font-weight:600; }}
 
 /* Widgets */
-div[data-baseweb="select"] > div {{ background:{t['input_bg']} !important; border:1px solid {t['border']} !important;
-  color:{t['text']} !important; border-radius:8px !important; }}
-div[data-baseweb="select"] * {{ color:{t['text']} !important; }}
-div[data-baseweb="popover"] li, div[data-baseweb="popover"] ul {{ background:{t['input_bg']} !important; color:{t['text']} !important; }}
 [data-testid="stSlider"] [role="slider"] {{ background:{t['accent']} !important; }}
 [data-testid="stSlider"] [data-testid="stTickBar"] *, [data-testid="stSliderThumbValue"] {{ color:{t['text']} !important; }}
 .stButton > button {{ width:100%; background:{t['btn_bg']}; color:{t['btn_fg']}; border:1px solid {t['border']};
@@ -125,7 +145,7 @@ def recommend_similar_books(idx, n=5):
     return recs
 
 # ---------------------------------------------------------
-# Interface
+# Interface (Centered Layout)
 # ---------------------------------------------------------
 quote = ("A room without books is like a body without a soul." if dark
          else "Where there are books, there is always a little garden.")
@@ -139,33 +159,41 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-col_input, _ = st.columns([2, 1])
-with col_input:
+# Centering inputs using 1-3-1 column ratio
+_, col_center, _ = st.columns([1, 3, 1])
+
+with col_center:
     selected_title = st.selectbox(
         f"{t['deco']} Select or search for a tome you cherished:",
-        sorted(book_map['title'].dropna().unique()))
+        options=sorted(book_map['title'].dropna().unique()),
+        index=None,
+        placeholder="✨ Search or select a book title..."
+    )
     num_recs = st.slider("✨ Number of recommendations to unveil:", 1, 10, 5)
     generate_btn = st.button("🔮 Uncover Similar Reads")
 
-if generate_btn:
-    matched = book_map[book_map['title'] == selected_title]
-    if matched.empty:
-        st.error("That volume was not found in the archives.")
-    else:
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.subheader(f"{t['deco']} Books aligned with *{selected_title}*")
-        st.caption(f"By {matched.iloc[0]['authors']}")
-        st.markdown("---")
+    if generate_btn:
+        if not selected_title:
+            st.warning("⚠️ Please select a book title from the search box first.")
+        else:
+            matched = book_map[book_map['title'] == selected_title]
+            if matched.empty:
+                st.error("That volume was not found in the archives.")
+            else:
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.subheader(f"{t['deco']} Books aligned with *{selected_title}*")
+                st.caption(f"By {matched.iloc[0]['authors']}")
+                st.markdown("---")
 
-        with st.spinner("Consulting latent vector archives..."):
-            recs = recommend_similar_books(matched.index[0], num_recs)
+                with st.spinner("Consulting latent vector archives..."):
+                    recs = recommend_similar_books(matched.index[0], num_recs)
 
-        for _, row in recs.iterrows():
-            pct = max(0, row['similarity_score']) * 100
-            st.markdown(f"""
-            <div class="book-card">
-                <div class="book-title">📖 {row['title']}</div>
-                <div class="book-author">by {row['authors']}</div>
-                <span class="match-badge">✨ {pct:.1f}% Reader Alignment</span>
-            </div>
-            """, unsafe_allow_html=True)
+                for _, row in recs.iterrows():
+                    pct = max(0, row['similarity_score']) * 100
+                    st.markdown(f"""
+                    <div class="book-card">
+                        <div class="book-title">📖 {row['title']}</div>
+                        <div class="book-author">by {row['authors']}</div>
+                        <span class="match-badge">✨ {pct:.1f}% Reader Alignment</span>
+                    </div>
+                    """, unsafe_allow_html=True)
